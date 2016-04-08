@@ -9,6 +9,7 @@ AVAIL_ZONE="us-east-1a"
 SOURCE_DIR="."
 SOURCE_SIZE=0
 TARGET_SIZE=0
+TARGET_IP_ADDRESS=""
 
 INSTANCE_ID=""
 VOLUME_ID=""
@@ -39,14 +40,30 @@ create_instance()
         grep InstanceId | awk '{print $2}' | cut -d '"' -f 2)
     echo 'The Instance ID is' 
     echo $INSTANCE_ID
+    TARGET_IP_ADDRESS=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID | \
+        grep PublicIpAddress | awk '{print $2}' | cut -d '"' -f 2)
+    echo 'The server IP address is'
+    echo $TARGET_IP_ADDRESS
 }
 
 terminate_instance()
 {
     aws ec2 terminate-instances --instance-ids $INSTANCE_ID
 }
-#create_instance
-#echo "[Create Instance] Done"
+
+connect_instance()
+{
+    ssh -o StrictHostKeyChecking=no fedora@$TARGET_IP_ADDRESS ls -a
+    while [ "$?" != "0" ]
+    do
+        ssh -o StrictHostKeyChecking=no fedora@$TARGET_IP_ADDRESS ls -a
+    done
+    aws ec2 describe-instance-status --instance-id $INSTANCE_ID
+}
+create_instance
+echo "[Create Instance] Done"
+#create_ebs_volume
+connect_instance
+echo "[Connect Instance] Successed"
 #terminate_instance
 #echo "[Terminate Instance] Done"
-create_ebs_volume

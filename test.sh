@@ -4,11 +4,17 @@ SIZE_IN_M=$(du -hsm . | awk '{print $1}')
 echo $SIZE_IN_M
 SIZE=`expr $SIZE_IN_M \\/ 1024`
 
-if [ "$SIZE" = "0" ] 
-then
-    SIZE=`expr $SIZE \\+ 1`
-fi
-echo $SIZE
+#if [ "$SIZE" = "0" ] 
+#then
+#    SIZE=`expr $SIZE \\+ 1`
+#fi
+#echo $SIZE
+COUNT=0
+while [ "$COUNT" != "10" ]
+do
+    echo $COUNT
+    COUNT=`expr $COUNT \\+ 1`
+done
 #SIZE=`expr $SIZE_IN_M \\/ 1024 \\+ 1 \\* 2`
 #echo $SIZE
 #RESULT=`expr $SIZE \\* 2`
