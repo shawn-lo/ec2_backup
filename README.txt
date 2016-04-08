@@ -1,3 +1,12 @@
+STEP 0:
+new ssh-key
+(same region with potential volume id?)
+
+STEP 1:
+new istance and attach to Volume-id(create if needed)
+wait some time for initilization
+
+STEP 2:
 From Mail List:
 
 tar <options> <dir> | ssh <instance> "dd of=<volume>"
