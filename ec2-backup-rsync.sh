@@ -7,6 +7,7 @@ IMAGE_REGION="us-east-1"
 AVAIL_ZONE="us-east-1a"
 
 SOURCE_DIR="."
+TARGET_DIR="/dev/xvdf"
 SOURCE_SIZE=0
 TARGET_SIZE=0
 TARGET_IP_ADDRESS=""
@@ -16,7 +17,9 @@ VOLUME_ID=""
 
 get_dir_size()
 {
-    local SIZE_IN_M=$(sudo du -hsm $SOURCE_DIR | awk '{print $1}')
+    #local SIZE_IN_M=$(sudo du -hsm $SOURCE_DIR | awk '{print $1}')
+    local SIZE_IN_M=$(du -hsm $SOURCE_DIR | awk '{print $1}')
+
     SOURCE_SIZE=`expr $SIZE_IN_M \\/ 1024`
     if [ "$SOURCE_SIZE" = "0" ]
     then
@@ -32,6 +35,11 @@ create_ebs_volume()
         grep VolumeId | awk '{print $2}' | cut -d '"' -f 2)
     echo 'The Volume ID is'
     echo $VOLUME_ID
+}
+
+attach_volume()
+{
+    aws ec2 attach-volume --volume-id $VOLUME_ID --instance-id $INSTANCE_ID --device $TARGET_DIR
 }
 
 create_instance()
@@ -53,17 +61,43 @@ terminate_instance()
 
 connect_instance()
 {
-    ssh -o StrictHostKeyChecking=no fedora@$TARGET_IP_ADDRESS ls -a
+    ssh -o StrictHostKeyChecking=no fedora@$TARGET_IP_ADDRESS "ls -a"
     while [ "$?" != "0" ]
     do
-        ssh -o StrictHostKeyChecking=no fedora@$TARGET_IP_ADDRESS ls -a
+        ssh -o StrictHostKeyChecking=no fedora@$TARGET_IP_ADDRESS "ls -a"
     done
-    aws ec2 describe-instance-status --instance-id $INSTANCE_ID
+    #aws ec2 describe-instance-status --instance-id $INSTANCE_ID
+}
+
+mount_filesystem()
+{
+    ssh fedora@$TARGET_IP_ADDRESS "sudo mkdir /home/fedora/backup_shell"
+    sleep 1
+    ssh fedora@$TARGET_IP_ADDRESS "sudo mkfs -t ext3 /dev/xvdf"
+    sleep 1
+    ssh fedora@$TARGET_IP_ADDRESS "sudo mount /dev/xvdf /home/fedora/backup_shell"
+    sleep 1
+    ssh fedora@$TARGET_IP_ADDRESS "sudo chgrp fedora /home/fedora/backup_shell | sudo chown fedora /home/fedora/backup_shell -R"
+    sleep 2
+}
+
+rsync_backup()
+{
+    rsync -avz -e ssh dead.letter fedora@$TARGET_IP_ADDRESS:/home/fedora/backup_shell
 }
 create_instance
 echo "[Create Instance] Done"
-#create_ebs_volume
+create_ebs_volume
+#INSTANCE_ID="i-0d37dc90"
+#TARGET_IP_ADDRESS="54.172.162.153"
 connect_instance
-echo "[Connect Instance] Successed"
+#create_ebs_volume
+sleep 10
+attach_volume
+sleep 10
+mount_filesystem
+rsync_backup
+
+#echo "[Connect Instance] Successed"
 #terminate_instance
 #echo "[Terminate Instance] Done"
