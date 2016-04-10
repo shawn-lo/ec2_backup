@@ -40,4 +40,7 @@ Refer to [manual](https://www.cs.stevens.edu/~jschauma/615/ec2-backup.txt) here,
 	$ chown fedora $DIR -R
 * Maybe 4 & 5 can do [together](http://superuser.com/questions/320415/linux-mount-device-with-specific-user-rights)
 
-6, ...
+6, User should be able to customize settings.
+
+* EC2_BACKUP_FLAGS_AWS: override the initial settings. If user set --key-name in this flag, it should be same in EC2_BACKUP_FLAGS_AWS
+* EC2_BACKUP_FLAGS_SSH: different keys. Handle errors.

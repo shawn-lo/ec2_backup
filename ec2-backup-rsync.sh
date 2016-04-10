@@ -15,6 +15,9 @@ TARGET_IP_ADDRESS=""
 INSTANCE_ID=""
 VOLUME_ID=""
 
+# Environment 
+#EC2_BACKUP_FLAGS_AWS=""
+
 get_dir_size()
 {
     #local SIZE_IN_M=$(sudo du -hsm $SOURCE_DIR | awk '{print $1}')
@@ -44,7 +47,9 @@ attach_volume()
 
 create_instance()
 {
-    INSTANCE_ID=$(aws ec2 run-instances --security-group-ids $EC2_GROUP_ID --key-name $KEY_NAME --image-id $IMAGE_ID | \
+    echo $EC2_BACKUP_FLAGS_AWS
+    # if EC2_BACKUP_FLAGS has been set, it covers old settigns.
+    INSTANCE_ID=$(aws ec2 run-instances --security-group-ids $EC2_GROUP_ID --key-name $KEY_NAME --instance-type m1.small $EC2_BACKUP_FLAGS_AWS --image-id $IMAGE_ID | \
         grep InstanceId | awk '{print $2}' | cut -d '"' -f 2)
     echo 'The Instance ID is' 
     echo $INSTANCE_ID
@@ -61,43 +66,43 @@ terminate_instance()
 
 connect_instance()
 {
-    ssh -o StrictHostKeyChecking=no fedora@$TARGET_IP_ADDRESS "ls -a"
+    ssh -o StrictHostKeyChecking=no $EC2_BACKUP_FLAGS_SSH fedora@$TARGET_IP_ADDRESS "ls -a"
     while [ "$?" != "0" ]
     do
-        ssh -o StrictHostKeyChecking=no fedora@$TARGET_IP_ADDRESS "ls -a"
+        ssh -o StrictHostKeyChecking=no $EC2_BACKUP_FLAGS_SSH fedora@$TARGET_IP_ADDRESS "ls -a"
     done
     #aws ec2 describe-instance-status --instance-id $INSTANCE_ID
 }
 
 mount_filesystem()
 {
-    ssh fedora@$TARGET_IP_ADDRESS "sudo mkdir /home/fedora/backup_shell"
+    ssh $EC2_BACKUP_FLAGS_SSH fedora@$TARGET_IP_ADDRESS "sudo mkdir /home/fedora/backup_shell"
     sleep 1
-    ssh fedora@$TARGET_IP_ADDRESS "sudo mkfs -t ext3 /dev/xvdf"
+    ssh $EC2_BACKUP_FLAGS_SSH fedora@$TARGET_IP_ADDRESS "sudo mkfs -t ext3 /dev/xvdf"
     sleep 1
-    ssh fedora@$TARGET_IP_ADDRESS "sudo mount /dev/xvdf /home/fedora/backup_shell"
+    ssh $EC2_BACKUP_FLAGS_SSH fedora@$TARGET_IP_ADDRESS "sudo mount /dev/xvdf /home/fedora/backup_shell"
     sleep 1
-    ssh fedora@$TARGET_IP_ADDRESS "sudo chgrp fedora /home/fedora/backup_shell | sudo chown fedora /home/fedora/backup_shell -R"
+    ssh $EC2_BACKUP_FLAGS_SSH fedora@$TARGET_IP_ADDRESS "sudo chgrp fedora /home/fedora/backup_shell | sudo chown fedora /home/fedora/backup_shell -R"
     sleep 2
 }
 
 rsync_backup()
 {
-    rsync -avz -e ssh dead.letter fedora@$TARGET_IP_ADDRESS:/home/fedora/backup_shell
+    rsync -avz -e ssh $EC2_BACKUP_FLAGS_SSH dead.letter fedora@$TARGET_IP_ADDRESS:/home/fedora/backup_shell
 }
 create_instance
-echo "[Create Instance] Done"
-create_ebs_volume
+# echo "[Create Instance] Done"
+# create_ebs_volume
 #INSTANCE_ID="i-0d37dc90"
 #TARGET_IP_ADDRESS="54.172.162.153"
 connect_instance
 #create_ebs_volume
-sleep 10
-attach_volume
-sleep 10
-mount_filesystem
-rsync_backup
+# sleep 10
+# attach_volume
+# sleep 10
+# mount_filesystem
+# rsync_backup
 
 #echo "[Connect Instance] Successed"
-#terminate_instance
+# terminate_instance
 #echo "[Terminate Instance] Done"
