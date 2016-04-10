@@ -86,23 +86,62 @@ mount_filesystem()
     sleep 2
 }
 
+umount_filesystem()
+{
+    ssh $EC2_BACKUP_FLAGS_SSH fedora@$TARGET_IP_ADDRESS "sudo umount /home/fedora/backup_shell"
+    sleep 1
+    aws ec2 detach-volume --volume-id $VOLUME_ID
+}
+
 rsync_backup()
 {
-    rsync -avz -e ssh $EC2_BACKUP_FLAGS_SSH dead.letter fedora@$TARGET_IP_ADDRESS:/home/fedora/backup_shell
+    rsync -avz -e ssh $EC2_BACKUP_FLAGS_SSH $SOURCE_DIR fedora@$TARGET_IP_ADDRESS:/home/fedora/backup_shell
 }
+
+###############
+# ice tea
+###############
+getOptions()
+{
+    while getopts :m:v:h opt; do
+        case "$opt" in
+            m) echo "Found the -m option, with value $OPTARG";;
+            v) echo "Found the -v option, with value $OPTARG";;
+            h) echo "Found the -h option" ;;
+            *) echo "Unknown option: $opt";;
+        esac
+    done
+    shift $[ $OPTIND - 1 ]
+
+    count=1
+    for param in "$@"
+    do
+        echo "Parameter $count: $param"
+        count=$[ $count + 1 ]
+    done
+}
+
+###############
+# main
+###############
+#getOptions
 create_instance
-# echo "[Create Instance] Done"
-# create_ebs_volume
+echo "[Create Instance] Done"
+create_ebs_volume
+echo "[Create Volume] Done"
 #INSTANCE_ID="i-0d37dc90"
 #TARGET_IP_ADDRESS="54.172.162.153"
 connect_instance
 #create_ebs_volume
-# sleep 10
-# attach_volume
-# sleep 10
-# mount_filesystem
-# rsync_backup
+sleep 10
+attach_volume
+sleep 10
+mount_filesystem
+rsync_backup
+sleep 10    
 
-#echo "[Connect Instance] Successed"
-# terminate_instance
-#echo "[Terminate Instance] Done"
+umount_filesystem
+echo "[Umount Filesystem] Done"
+sleep 1
+terminate_instance
+echo "[All Done]"
