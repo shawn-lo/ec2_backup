@@ -34,13 +34,11 @@ create_ebs_volume()
     get_dir_size
     VOLUME_ID=$(aws ec2 create-volume --size $TARGET_SIZE --region $IMAGE_REGION --availability-zone $AVAIL_ZONE --volume-type standard | \
         grep VolumeId | awk '{print $2}' | cut -d '"' -f 2)
-    #echo 'The Volume ID is'
-    #echo $VOLUME_ID
 }
 
 attach_volume()
 {
-    aws ec2 attach-volume --volume-id $VOLUME_ID --instance-id $INSTANCE_ID --device $TARGET_DIR 1>&2
+    aws ec2 attach-volume --volume-id $VOLUME_ID --instance-id $INSTANCE_ID --device $TARGET_DIR >> backup.log
 }
 
 create_instance()
@@ -59,48 +57,59 @@ create_instance()
 
 terminate_instance()
 {
-    aws ec2 terminate-instances --instance-ids $INSTANCE_ID 1>&2
+    aws ec2 terminate-instances --instance-ids $INSTANCE_ID >> backup.log
 }
 
 connect_instance()
 {
-    ssh -o StrictHostKeyChecking=no $EC2_BACKUP_FLAGS_SSH fedora@$TARGET_IP_ADDRESS "exit"
-    while [ "$?" != "0" ]
+    #ssh -o StrictHostKeyChecking=no $EC2_BACKUP_FLAGS_SSH fedora@$TARGET_IP_ADDRESS "exit" 
+    #while [ "$?" != "0" ]
+    #do
+    #    echo "Waiting for Port 22."
+    #    sleep 3
+    #    ssh -o StrictHostKeyChecking=no $EC2_BACKUP_FLAGS_SSH fedora@$TARGET_IP_ADDRESS "exit"
+    #done
+    #echo "outside1"
+    SSH_STATUS=$(ssh -o StrictHostKeyChecking=no $EC2_BACKUP_FLAGS_SSH -o ConnectTimeout=5 fedora@$TARGET_IP_ADDRESS echo "ok" 2>&1)
+    #echo $SSH_STATUS
+    #echo "outside2"
+    while [ "$SSH_STATUS" != "ok" ]
     do
-        echo "Waiting for Port 22."
-        sleep 3
-        ssh -o StrictHostKeyChecking=no $EC2_BACKUP_FLAGS_SSH fedora@$TARGET_IP_ADDRESS "exit"
+        SSH_STATUS=$(ssh -o StrictHostKeyChecking=no $EC2_BACKUP_FLAGS_SSH -o ConnectTimeout=5 fedora@$TARGET_IP_ADDRESS echo "ok" 2>&1)
+        #echo $SSH_STATUS
+        #echo "inside"
+        sleep 10
     done
 }
 
 mount_filesystem()
 {
-    ssh $EC2_BACKUP_FLAGS_SSH fedora@$TARGET_IP_ADDRESS "sudo mkdir /home/fedora/backup_shell" 
+    ssh $EC2_BACKUP_FLAGS_SSH fedora@$TARGET_IP_ADDRESS "sudo mkdir /home/fedora/backup_shell" >> backup.log
     sleep 1
-    ssh $EC2_BACKUP_FLAGS_SSH fedora@$TARGET_IP_ADDRESS "sudo mkfs -t ext3 /dev/xvdf" 
+    ssh $EC2_BACKUP_FLAGS_SSH fedora@$TARGET_IP_ADDRESS "sudo mkfs -t ext3 /dev/xvdf 1>/dev/null 2>/dev/null" >> backup.log
     sleep 1
-    ssh $EC2_BACKUP_FLAGS_SSH fedora@$TARGET_IP_ADDRESS "sudo mount /dev/xvdf /home/fedora/backup_shell" 
+    ssh $EC2_BACKUP_FLAGS_SSH fedora@$TARGET_IP_ADDRESS "sudo mount /dev/xvdf /home/fedora/backup_shell" >> backup.log
     sleep 1
-    ssh $EC2_BACKUP_FLAGS_SSH fedora@$TARGET_IP_ADDRESS "sudo chgrp fedora /home/fedora/backup_shell | sudo chown fedora /home/fedora/backup_shell -R" 
+    ssh $EC2_BACKUP_FLAGS_SSH fedora@$TARGET_IP_ADDRESS "sudo chgrp fedora /home/fedora/backup_shell | sudo chown fedora /home/fedora/backup_shell -R" >> backup.log
     sleep 2
 }
 
 umount_filesystem()
 {
-    ssh $EC2_BACKUP_FLAGS_SSH fedora@$TARGET_IP_ADDRESS "sudo umount /home/fedora/backup_shell" 1>&2
+    ssh $EC2_BACKUP_FLAGS_SSH fedora@$TARGET_IP_ADDRESS "sudo umount /home/fedora/backup_shell" 
     sleep 1
-    aws ec2 detach-volume --volume-id $VOLUME_ID 1>&2
+    aws ec2 detach-volume --volume-id $VOLUME_ID >> backup.log
 }
 
 rsync_backup()
 {
     FLAGS="\"ssh $EC2_BACKUP_FLAGS_SSH\""
-    eval rsync -avz -e $FLAGS $SOURCE_DIR fedora@$TARGET_IP_ADDRESS:/home/fedora/backup_shell
+    eval rsync -avz -e $FLAGS $SOURCE_DIR fedora@$TARGET_IP_ADDRESS:/home/fedora/backup_shell >> backup.log
 }
 
 dd_backup()
 {
-    tar cvf - $SOURCE_DIR | ssh $EC2_BACKUP_FLAGS_SSH fedora@$TARGET_IP_ADDRESS "dd of=/home/fedora/back_up.tar"
+    tar cvf - $SOURCE_DIR 1>/dev/null 2>/dev/null  | ssh $EC2_BACKUP_FLAGS_SSH fedora@$TARGET_IP_ADDRESS "dd of=/home/fedora/back_up.tar" >> backup.log
 }
 
 usage()
@@ -108,8 +117,8 @@ usage()
 	cat <<EOH
 usage: $0 [-hvm]
 	-h Print help me
-    -m Print all MAC addresses.
-	-n Print all netmasks.
+    -v Customed Volume ID
+	-m Backup method, dd or rsync
 EOH
 }
 
@@ -236,11 +245,9 @@ EOH
 while getopts ":m:v:h" opt; do
     case "$opt" in
         m) 
-            echo "Found the -m option, with value $OPTARG"
             if [ $OPTARG = "dd" ]
             then
                 BACKUP_METHOD=$OPTARG
-                echo $BACKUP_METHOD
             elif [ $OPTARG = "rsync" ]
             then
                 BACKUP_METHOD=$OPTARG
@@ -250,7 +257,6 @@ while getopts ":m:v:h" opt; do
             fi  
         ;;
         v) 
-            echo "Found the -v option, with value $OPTARG"
             VOLUME_ID=$OPTARG
         ;;
         h) 
@@ -270,27 +276,32 @@ SOURCE_DIR=$@
 #main
 ###############
 create_instance
-echo "[Create Instance] Done"
+echo "[Create Instance] Done" > backup.log
 if [ $VOLUME_ID = "1" ]
 then
     create_ebs_volume
 fi
 echo $VOLUME_ID
-echo "[Create Volume] Done"
+echo "[Create Volume] Done" >> backup.log
 connect_instance
 #create_ebs_volume
 sleep 10
 attach_volume
 sleep 10
 mount_filesystem
-if [ $BACKUP_METHOD = "dd" ]
+if [ "$BACKUP_METHOD" = "dd" ]
 then
     dd_backup
 else
     rsync_backup
 fi
 umount_filesystem
-echo "[Umount Filesystem] Done"
+echo "[Umount Filesystem] Done" >> backup.log
 sleep 1
 terminate_instance
-echo "[All Done]"
+echo "[All Done]" >> backup.log
+
+if [ "$EC2_BACKUP_VERBOSE" = "true" ]
+then
+    cat backup.log
+fi
