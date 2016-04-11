@@ -1,0 +1,54 @@
+commit 39e86181dd967ab961cbac07a9cdcc6567255135
+Author: ice-tea <tmacback@gmail.com>
+Date:   Mon Apr 11 15:15:25 2016 -0400
+
+    final.sh for suspend_handle
+
+commit 8ab1911d464820c3ade6a70d462f50b995e32a3e
+Author: ice-tea <tmacback@gmail.com>
+Date:   Sun Apr 10 20:36:17 2016 -0400
+
+    test dd and success log file
+
+commit 83271a9695e152635da9eb98f1534553c0453500
+Author: ice-tea <tmacback@gmail.com>
+Date:   Sat Apr 9 19:58:28 2016 -0400
+
+    RunTest for testing Key&Group Generation
+
+commit 792f049308801c17729b0765e8efd81ad6d64552
+Author: ice-tea <tmacback@gmail.com>
+Date:   Sat Apr 9 19:27:14 2016 -0400
+
+    Secutity Group & Key Pair & Get parameters
+
+commit 1a2c64e601473e0b006011b98e9a6f40170f10eb
+Author: ice-tea <tmacback@gmail.com>
+Date:   Fri Apr 8 15:04:58 2016 -0400
+
+    STEPS
+
+commit c814b276d42d389645c9ed893e7624acaee4f3c8
+Author: ice-tea <tmacback@gmail.com>
+Date:   Fri Apr 8 14:34:18 2016 -0400
+
+    create dd branch
+
+commit 155493490658e8549f17f202be41c0e7fd182679
+Merge: 5642629 5c3342c
+Author: ice-tea <tmacback@gmail.com>
+Date:   Mon Apr 4 22:08:53 2016 -0400
+
+    Merge branch 'master' of https://github.com/shawn-lo/ec2_backup
+
+commit 5642629e202991c98004f4441b2c60c7f0c9722a
+Author: ice-tea <tmacback@gmail.com>
+Date:   Mon Apr 4 20:40:47 2016 -0400
+
+    first
+
+commit 5c3342ceb9fd00b08fd7bf0d9973be2e6b1c24cd
+Author: Shawn Luo <shawn.luotianyu@gmail.com>
+Date:   Mon Apr 4 20:34:58 2016 -0400
+
+    3 main steps

@@ -1,0 +1,3 @@
+----handle suspend------
+When user hit ^C half-way catch this signal and unroll all tasks like unattach and delete volume.
+Find "trap" is useful and wrote suspend_handle subroutine cooperate with a $PHASE variable to record which tasks should be done.
