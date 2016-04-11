@@ -1,0 +1,73 @@
+bli34@avatar:~/hw6$ ./t2
+--security-group-ids sg-db29fca3 --key-name 615-hw3
+The Instance ID is
+i-ea649977
+The server IP address is
+54.175.188.204
+[Create Instance] Done
+The Volume ID is
+vol-8302fe52
+[Create Volume] Done
+ssh: connect to host 54.175.188.204 port 22: Connection timed out
+.....
+ssh: connect to host 54.175.188.204 port 22: Connection refused
+Warning: Permanently added '54.175.188.204' (ECDSA) to the list of known hosts.
+.
+..
+.bash_logout
+.bash_profile
+.bashrc
+.ssh
+{
+    "AttachTime": "2016-04-11T00:31:40.546Z",
+    "InstanceId": "i-ea649977",
+    "VolumeId": "vol-8302fe52",
+    "State": "attaching",
+    "Device": "/dev/xvdf"
+}
+mke2fs 1.42.13 (17-May-2015)
+Creating filesystem with 524288 4k blocks and 131072 inodes
+Filesystem UUID: 4e3ec592-53a5-421f-8ff9-09141d3e32c0
+Superblock backups stored on blocks:
+32768, 98304, 163840, 229376, 294912
+
+Allocating group tables: done
+Writing inode tables: done
+Creating journal (16384 blocks): done
+Writing superblocks and filesystem accounting information: done
+
+./
+./tt
+./test
+./615-hw3.pem
+./first
+./third
+./t2
+./second
+60+0 records in
+60+0 records out
+30720 bytes (31 kB) copied, 0.000715226 s, 43.0 MB/s
+{
+    "AttachTime": "2016-04-11T00:31:40.000Z",
+    "InstanceId": "i-ea649977",
+    "VolumeId": "vol-8302fe52",
+    "State": "detaching",
+    "Device": "/dev/xvdf"
+}
+[Umount Filesystem] Done
+{
+    "TerminatingInstances": [
+        {
+            "InstanceId": "i-ea649977",
+            "CurrentState": {
+                "Code": 32,
+                "Name": "shutting-down"
+            },
+            "PreviousState": {
+                "Code": 16,
+                "Name": "running"
+            }
+        }
+    ]
+}
+[All Done]
